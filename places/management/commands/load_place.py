@@ -31,12 +31,11 @@ class Command(BaseCommand):
         place, created = Place.objects.get_or_create(
             title=place_data['title'],
             defaults={
-                'short_title': place_data['title'],
-                'short_description': place_data['description_short'],
-                'long_description': place_data['description_long'],
+                'title': place_data['title'],
+                'description_short': place_data['description_short'],
+                'description_long': place_data['description_long'],
                 'lng': place_data['coordinates']['lng'],
-                'lat': place_data['coordinates']['lat'],
-                'place_id': place_data['title'],
+                'lat': place_data['coordinates']['lat']
             }
         )
         if created:
