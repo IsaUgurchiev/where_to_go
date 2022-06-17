@@ -27,34 +27,37 @@ class Command(BaseCommand):
             logger.error(f'UNABLE TO LOAD DATA FROM RESOURCE {resource_url}, details: {e}')
             return
 
-        place_data = response.json()
+        serialized_places = response.json()
         place, created = Place.objects.get_or_create(
-            title=place_data['title'],
+            title=serialized_places['title'],
             defaults={
-                'title': place_data['title'],
-                'description_short': place_data['description_short'],
-                'description_long': place_data['description_long'],
-                'lng': place_data['coordinates']['lng'],
-                'lat': place_data['coordinates']['lat']
+                'title': serialized_places['title'],
+                'description_short': serialized_places['description_short'],
+                'description_long': serialized_places['description_long'],
+                'lng': serialized_places['coordinates']['lng'],
+                'lat': serialized_places['coordinates']['lat']
             }
         )
-        if created:
-            for position_index, img_url in enumerate(place_data['imgs'], start=1):
-                try:
-                    img_response = requests.get(img_url)
-                    img_response.raise_for_status()
-                except requests.exceptions.HTTPError as e:
-                    logger.error(f'UNABLE TO SAVE IMAGE FROM FROM RESOURCE {img_url}, details: {e}')
-                    continue
 
-                img = BytesIO(img_response.content)
-                place_image, img_created = PlaceImage.objects.get_or_create(
-                    place=place,
-                    position=position_index
-                )
-                place_image.image.save(f'place-{place.id}-img-{position_index}', img, save=True)
+        if not created:
+            logger.info(f'UPDATED PLACE {place}')
+            logger.info(f'END LOADING DATA FROM RESOURCE {resource_url}')
+            return
 
-        action = 'CREATED' if created else 'UPDATED'
-        logger.info(f'{action} PLACE {place}')
+        for position_index, img_url in enumerate(serialized_places['imgs'], start=1):
+            try:
+                img_response = requests.get(img_url)
+                img_response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                logger.error(f'UNABLE TO SAVE IMAGE FROM FROM RESOURCE {img_url}, details: {e}')
+                continue
 
+            img = BytesIO(img_response.content)
+            place_image, img_created = PlaceImage.objects.get_or_create(
+                place=place,
+                position=position_index
+            )
+            place_image.image.save(f'place-{place.id}-img-{position_index}', img, save=True)
+
+        logger.info(f'CREATED PLACE {place}')
         logger.info(f'END LOADING DATA FROM RESOURCE {resource_url}')

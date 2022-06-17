@@ -6,10 +6,10 @@ from django.urls import reverse
 
 
 def index(request):
-    places = Place.objects.all()
+    places_set = Place.objects.all()
 
     features = []
-    for place in places:
+    for place in places_set:
         features.append({
             "type": "Feature",
             "geometry": {
@@ -23,12 +23,12 @@ def index(request):
             }
         })
 
-    data = {
+    places = {
         "type": "FeatureCollection",
         "features": features
     }
 
-    return render(request, 'index.html', {'places': data})
+    return render(request, 'index.html', {'places': places})
 
 
 def place_detail(request, id):
@@ -36,7 +36,7 @@ def place_detail(request, id):
     images = []
     for img in place.image.all():
         images.append(img.image.url)
-    data = {
+    serialized_place = {
         'title': place.title,
         'imgs': images,
         'description_short': place.description_short,
@@ -46,4 +46,4 @@ def place_detail(request, id):
             'lng': place.lng,
         },
     }
-    return JsonResponse(data, json_dumps_params={'ensure_ascii': False, 'indent': 4})
+    return JsonResponse(serialized_place, json_dumps_params={'ensure_ascii': False, 'indent': 4})
